@@ -99,9 +99,13 @@ As data is loaded from S3, the **schema-on-read** approach is utilized to struct
 | weekday     | integer   |
 
 ### Spark and AWS EMR
-The data pipeline is enclosed within the `etl.py` Python script. Steps within the workflow include creating a Spark session object, ingesting song and log files, processing data into individual analytics tables, and saving processed data to S3. Initial testing was done locally, and once the script ran successfully on a sample dataset, an AWS EMR cluster was launched to process the complete data files. A Jupyter Notebook on the cluster helped resolve lingering bugs and syntax errors before the `etl.py` Spark application was transferred onto the EMR host and the application was run using `spark-submit` from the command line:
+The data pipeline is enclosed within the `etl.py` Python script. Steps within the workflow include creating a Spark session object, ingesting song and log files, processing data into individual analytics tables, and saving processed data to S3. If Spark is installed locally and configured to run in standalone mode, the script can be run from the command line:
 
-    /usr/bin/spark-submit --master yarn ./etl.py
+    python path/to/etl.py
+
+ Initial testing was done locally, and once the script ran successfully on a sample dataset, an AWS EMR cluster was launched to process the complete data files. A Jupyter Notebook on the cluster helped resolve lingering bugs and syntax errors before the `etl.py` Spark application was transferred onto the EMR host and the application was run using `spark-submit` from the command line:
+
+    /usr/bin/spark-submit --master yarn path/to/etl.py
 
 
 ### Conclusion
