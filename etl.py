@@ -1,16 +1,15 @@
-# import os
-# import configparser
+import os
+import configparser
 from datetime import datetime
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as f
 from pyspark.sql import types as t
 
-# AWS credentials are saved locally as environmental variables
-# config = configparser.ConfigParser()
-# config.read('dl.cfg')
-#
-# os.environ['AWS_ACCESS_KEY_ID']=config.get('AWS','AWS_ACCESS_KEY_ID')
-# os.environ['AWS_SECRET_ACCESS_KEY']=config.get('AWS','AWS_SECRET_ACCESS_KEY')
+config = configparser.ConfigParser()
+config.read('dl.cfg')
+
+os.environ['AWS_ACCESS_KEY_ID']=config.get('AWS','AWS_ACCESS_KEY_ID')
+os.environ['AWS_SECRET_ACCESS_KEY']=config.get('AWS','AWS_SECRET_ACCESS_KEY')
 
 
 def create_spark_session():
@@ -19,7 +18,7 @@ def create_spark_session():
     '''
     spark = SparkSession \
         .builder \
-        .config('spark.jars.packages', 'org.apache.hadoop:hadoop-aws:2.7.0') \
+        .config('spark.jars.packages', 'org.apache.hadoop:hadoop-aws:2.7.3,com.amazonaws:aws-java-sdk-pom:1.10.34') \
         .getOrCreate()
     return spark
 
@@ -59,15 +58,15 @@ def process_song_data(spark, input_data, output_data):
     songs_table = df.select('song_id', 'title', 'artist_id', 'year', 'duration').dropDuplicates()
 
     # write songs table to parquet files partitioned by year and artist
-    songs_output = output_data + 'songs'
-    songs_table.write.partitionBy('year', 'artist_id').parquet(songs_output, mode='overwrite') # 'error' is default
+    songs_output = output_data + 'data-lake/parquet-files/songs'
+    songs_table.write.partitionBy('year', 'artist_id').parquet(songs_output) # 'error' is default
 
     # extract columns to create artists table
     artists_table = df.selectExpr('artist_id', 'artist_name as name', 'artist_location as location', 'artist_latitude as latitude', 'artist_longitude as longitude').dropDuplicates()
 
     # write artists table to parquet files
-    artists_output = output_data + 'artists'
-    artists_table.write.parquet(artists_output, mode='overwrite') # 'error' is default
+    artists_output = output_data + 'data-lake/parquet-files/artists'
+    artists_table.write.parquet(artists_output) # 'error' is default
 
 
 def process_log_data(spark, input_data, output_data):
@@ -95,8 +94,8 @@ def process_log_data(spark, input_data, output_data):
     users_table = df.selectExpr('userId as user_id', 'firstName as first_name', 'lastName as last_name', 'gender', 'level').dropDuplicates()
 
     # write users table to parquet files
-    users_output = output_data + 'users'
-    users_table.write.parquet(users_output, mode='overwrite')
+    users_output = output_data + 'data-lake/parquet-files/users'
+    users_table.write.parquet(users_output)
 
     # create timestamp column from original timestamp column
     get_timestamp = f.udf(lambda x: datetime.fromtimestamp(x/1000), t.TimestampType())
@@ -116,8 +115,8 @@ def process_log_data(spark, input_data, output_data):
             f.date_format('start_time', 'u').cast(t.IntegerType()).alias('weekday')).dropDuplicates()
 
     # write time table to parquet files partitioned by year and month
-    time_output = output_data + 'time'
-    time_table.write.partitionBy('year', 'month').parquet(time_output, mode='overwrite')
+    time_output = output_data + 'data-lake/parquet-files/time'
+    time_table.write.partitionBy('year', 'month').parquet(time_output)
 
     # read in song data to use for songplays table
     # songs_data = output_data + 'songs/*/*/*.parquet'
@@ -175,17 +174,17 @@ def process_log_data(spark, input_data, output_data):
     # ''')
 
     # write songplays table to parquet files partitioned by year and month
-    songplays_output = output_data + 'songplays'
-    songplays_table.write.partitionBy('year', 'month').parquet(songplays_output, mode='overwrite')
+    songplays_output = output_data + 'data-lake/parquet-files/songplays'
+    songplays_table.write.partitionBy('year', 'month').parquet(songplays_output)
 
 
 def main():
     '''
-    Run ETL process by creating a SparkSession object, creating analytics tables, and saving output to S3
+    Run ETL process by instantiating a SparkSession object, creating analytics tables, and saving output to S3
     '''
     spark = create_spark_session()
-    input_data = 's3n://udacity-dend/'
-    output_data = 's3n://sking-data-engineer/data-lake/parquet-files/'
+    input_data = 's3a://udacity-dend/'
+    output_data = 's3a://sking-data-engineer/'
 
     process_song_data(spark, input_data, output_data)
     process_log_data(spark, input_data, output_data)
