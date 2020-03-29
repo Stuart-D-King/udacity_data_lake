@@ -98,15 +98,14 @@ As data is loaded from S3, the **schema-on-read** approach is utilized to struct
 | year        | integer   |
 | weekday     | integer   |
 
-### Spark and AWS EMR
-The data pipeline is enclosed within the `etl.py` Python script. Steps within the workflow include creating a Spark session object, ingesting song and log files, processing data into individual analytics tables, and saving processed data to S3. If Spark is installed locally and configured to run in standalone mode, the script can be run from the command line:
+### How to Execute the Pipeline
+Before executing the pipeline locally or on the cloud, AWS credentials must be properly set in `dl.cfg`. It is important that the credentials for the IAM user have the necessary permissions to access S3.
 
-    python path/to/etl.py
-
- Initial testing was done locally, and once the script ran successfully on a sample dataset, an AWS EMR cluster was launched to process the complete data files. A Jupyter Notebook on the cluster helped resolve lingering bugs and syntax errors before the `etl.py` Spark application was transferred onto the EMR host and the application was run using `spark-submit` from the command line:
+The `etl.py` script can be executed locally using Spark standalone if configured correctly, but is ideally run using an **EMR cluster**. After launching an EMR cluster on AWS, copy the `etl.py` script onto the cluster's host. Once on the host, the application can be run using `spark-submit` from the command line:
 
     /usr/bin/spark-submit --master yarn path/to/etl.py
 
+If the pipeline must be run locally, it is recommended to use the smaller datasets found in the `data/` directory. File paths will need to be updated to correspond to this new datasource.
 
 ### Conclusion
 Transitioning Sparkify's data storage and analytical engine to the Cloud positions the company for long-term data management success. The power and scalability of AWS will allow the company to easily increase or reduce infrastructure and processing power needs as the business grows and analytical needs are refined. Furthermore, building a data lake with Spark and AWS services equips the company with the latest big data tools and technologies; expands its ability to leverage all types of data formats and values, not just tabular and high-value data; and opens the door for even more advanced analytics such as machine learning.
